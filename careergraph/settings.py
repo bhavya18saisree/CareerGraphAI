@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-wo@a+1b#yxc*$mw+nm18av6+fp#g(f8dp2ff+=c&s@@qwj(#t@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [ALLOWED_HOSTS = [
+    "careergraphai.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]]
 
 
 # Application definition
