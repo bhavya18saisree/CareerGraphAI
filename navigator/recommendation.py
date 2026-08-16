@@ -1,52 +1,80 @@
 from .graph import graph_db
 
 
+def normalize_skill(skill):
+    """
+    Normalize a skill so comparisons are consistent.
+
+    Examples:
+        'Python'      -> 'python'
+        ' python '    -> 'python'
+        'REST API'    -> 'rest api'
+        'rest api'    -> 'rest api'
+    """
+    if skill is None:
+        return ""
+
+    return " ".join(
+        str(skill).strip().lower().split()
+    )
+
+
 def get_career_recommendations(user_skills):
     """
-    Generate career recommendations from the Neo4j career-skill graph.
+    Generate career recommendations from the Neo4j
+    Career -> REQUIRES -> Skill graph.
 
-    The function:
-    1. Cleans the user's selected skills.
-    2. Finds all Career -> REQUIRES -> Skill relationships.
-    3. Matches skills case-insensitively.
-    4. Calculates a career match percentage.
-    5. Returns missing skills.
+    Returns:
+        [
+            {
+                "career": "...",
+                "score": 80,
+                "matched_skills": [...],
+                "missing_skills": [...]
+            }
+        ]
     """
 
-    # -----------------------------------------
-    # CLEAN USER SKILLS
-    # -----------------------------------------
+    # =========================================
+    # 1. CLEAN USER SKILLS
+    # =========================================
 
     if not user_skills:
         return []
 
     cleaned_skills = []
+    seen_skills = set()
 
     for skill in user_skills:
-        if skill is None:
+
+        normalized = normalize_skill(skill)
+
+        if not normalized:
             continue
 
-        skill = str(skill).strip()
+        # Remove duplicate skills
+        if normalized not in seen_skills:
 
-        if skill:
-            cleaned_skills.append(skill)
+            seen_skills.add(normalized)
+
+            # Keep a clean display version
+            cleaned_skills.append(
+                str(skill).strip()
+            )
 
     if not cleaned_skills:
         return []
 
-    # Remove duplicates while preserving order
-    cleaned_skills = list(dict.fromkeys(cleaned_skills))
-
-    # -----------------------------------------
-    # NEO4J QUERY
-    # -----------------------------------------
+    # =========================================
+    # 2. NEO4J QUERY
+    # =========================================
 
     query = """
     MATCH (c:Career)-[:REQUIRES]->(s:Skill)
 
     WITH
         c,
-        collect(DISTINCT s.name) AS required_skills
+        collect(DISTINCT trim(s.name)) AS required_skills
 
     WITH
         c,
@@ -55,7 +83,10 @@ def get_career_recommendations(user_skills):
             skill IN required_skills
             WHERE any(
                 userSkill IN $user_skills
-                WHERE toLower(trim(skill)) = toLower(trim(userSkill))
+                WHERE
+                    toLower(trim(skill))
+                    =
+                    toLower(trim(userSkill))
             )
         ] AS matched_skills
 
@@ -69,6 +100,10 @@ def get_career_recommendations(user_skills):
     ORDER BY matched_count DESC
     """
 
+    # =========================================
+    # 3. EXECUTE NEO4J QUERY
+    # =========================================
+
     try:
 
         results = graph_db.execute_query(
@@ -80,19 +115,25 @@ def get_career_recommendations(user_skills):
 
     except Exception as e:
 
-        print("Neo4j recommendation error:", str(e))
+        print(
+            "Neo4j recommendation error:",
+            str(e)
+        )
 
         return []
 
-    recommendations = []
+    # =========================================
+    # 4. PROCESS RESULTS
+    # =========================================
 
-    # -----------------------------------------
-    # PROCESS RESULTS
-    # -----------------------------------------
+    recommendations = []
 
     for result in results:
 
         career = result.get("career")
+
+        if not career:
+            continue
 
         required_skills = result.get(
             "required_skills",
@@ -104,56 +145,94 @@ def get_career_recommendations(user_skills):
             []
         )
 
-        if not career:
-            continue
+        # Make sure values are lists
+        if not isinstance(required_skills, list):
+            required_skills = []
+
+        if not isinstance(matched_skills, list):
+            matched_skills = []
 
         if not required_skills:
             continue
 
-        total_required = len(required_skills)
+        # =========================================
+        # 5. CLEAN REQUIRED SKILLS
+        # =========================================
 
-        matched_count = len(matched_skills)
+        required_skills = [
+            str(skill).strip()
+            for skill in required_skills
+            if skill is not None
+            and str(skill).strip()
+        ]
 
-        # -----------------------------------------
-        # CALCULATE SCORE
-        # -----------------------------------------
+        # =========================================
+        # 6. CLEAN MATCHED SKILLS
+        # =========================================
 
-        score = round(
-            (matched_count / total_required) * 100
-        )
+        matched_skills = [
+            str(skill).strip()
+            for skill in matched_skills
+            if skill is not None
+            and str(skill).strip()
+        ]
 
-        # -----------------------------------------
-        # FIND MISSING SKILLS
-        # -----------------------------------------
+        # =========================================
+        # 7. FIND MISSING SKILLS
+        # =========================================
+
+        user_skill_set = {
+            normalize_skill(skill)
+            for skill in cleaned_skills
+        }
 
         missing_skills = []
 
         for required_skill in required_skills:
 
-            found = False
+            required_normalized = normalize_skill(
+                required_skill
+            )
 
-            for user_skill in cleaned_skills:
+            if required_normalized not in user_skill_set:
 
-                if (
-                    str(required_skill).strip().lower()
-                    ==
-                    str(user_skill).strip().lower()
-                ):
-                    found = True
-                    break
-
-            if not found:
                 missing_skills.append(
                     required_skill
                 )
 
-        # -----------------------------------------
-        # ADD RECOMMENDATION
-        # -----------------------------------------
+        # =========================================
+        # 8. CALCULATE MATCH SCORE
+        # =========================================
+
+        total_required = len(
+            required_skills
+        )
+
+        matched_count = len(
+            matched_skills
+        )
+
+        if total_required > 0:
+
+            score = round(
+                (
+                    matched_count
+                    /
+                    total_required
+                ) * 100
+            )
+
+        else:
+
+            score = 0
+
+        # =========================================
+        # 9. ADD CAREER
+        # =========================================
 
         recommendations.append({
 
-            "career": career,
+            "career": str(career).strip(),
 
             "score": score,
 
@@ -163,14 +242,17 @@ def get_career_recommendations(user_skills):
 
         })
 
-    # -----------------------------------------
-    # SORT RESULTS
-    # -----------------------------------------
+    # =========================================
+    # 10. SORT CAREERS
+    # =========================================
 
     recommendations.sort(
         key=lambda x: x["score"],
         reverse=True
     )
 
-    # Return maximum 10 careers
+    # =========================================
+    # 11. RETURN TOP 10
+    # =========================================
+
     return recommendations[:10]

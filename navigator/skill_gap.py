@@ -10,36 +10,23 @@ def get_skill_gap(user_skills, target_career):
         if str(skill).strip()
     ]
 
-    # Clean target career
+    # Clean career name
     target_career = str(target_career or "").strip()
 
+    # If no career is selected
     if not target_career:
         return {
             "career": "",
+            "user_skills": user_skills,
             "required_skills": [],
             "matched_skills": [],
             "missing_skills": []
         }
 
-    try:
-
-        # IMPORTANT:
-        # Use the SAME recommendation engine that already
-        # works correctly in Step 02.
-        recommendations = get_career_recommendations(
-            user_skills
-        )
-
-    except Exception as e:
-
-        print("Skill gap recommendation error:", e)
-
-        return {
-            "career": target_career,
-            "required_skills": [],
-            "matched_skills": [],
-            "missing_skills": []
-        }
+    # Get career recommendations
+    recommendations = get_career_recommendations(
+        user_skills
+    )
 
     # Find the selected career
     selected_result = None
@@ -55,33 +42,36 @@ def get_skill_gap(user_skills, target_career):
             selected_result = result
             break
 
-    # Career not found
+    # Career was not found
     if selected_result is None:
-
         return {
             "career": target_career,
+            "user_skills": user_skills,
             "required_skills": [],
             "matched_skills": [],
             "missing_skills": []
         }
 
+    # Get matched skills
     matched_skills = selected_result.get(
         "matched_skills",
         []
     )
 
+    # Get missing skills
     missing_skills = selected_result.get(
         "missing_skills",
         []
     )
 
-    # Make sure they are always lists
+    # Make sure both are lists
     if not isinstance(matched_skills, list):
         matched_skills = []
 
     if not isinstance(missing_skills, list):
         missing_skills = []
 
+    # Required skills
     required_skills = (
         matched_skills +
         missing_skills
@@ -92,6 +82,8 @@ def get_skill_gap(user_skills, target_career):
             "career",
             target_career
         ),
+
+        "user_skills": user_skills,
 
         "required_skills": required_skills,
 
