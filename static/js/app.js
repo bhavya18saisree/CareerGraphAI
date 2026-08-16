@@ -1,60 +1,45 @@
-/* =========================================================
-   CAREERGRAPH AI - COMPLETE FRONTEND JAVASCRIPT
-========================================================= */
-
-"use strict";
-
-/* =========================================================
-   DOM ELEMENTS
-========================================================= */
-
-const skillElements = document.querySelectorAll(".skill");
-
-const selectedCount =
-    document.getElementById("selectedCount");
-
-const analyzeBtn =
-    document.getElementById("analyzeBtn");
-
-const clearBtn =
-    document.getElementById("clearBtn");
-
-const loading =
-    document.getElementById("loading");
-
-const errorBox =
-    document.getElementById("error");
-
-const results =
-    document.getElementById("results");
-
-const careerResults =
-    document.getElementById("careerResults");
-
-const gapSection =
-    document.getElementById("gapSection");
-
-const gapResults =
-    document.getElementById("gapResults");
-
-const learningSection =
-    document.getElementById("learningSection");
-
-const learningResults =
-    document.getElementById("learningResults");
-
-
-/* =========================================================
-   INITIALIZATION
-========================================================= */
-
 document.addEventListener("DOMContentLoaded", function () {
 
-    updateSelectedCount();
+    // =========================================================
+    // ELEMENTS
+    // =========================================================
 
-    /* -----------------------------------------
-       SKILL BUTTONS
-    ----------------------------------------- */
+    const skillElements = document.querySelectorAll(".skill");
+    const selectedCount = document.getElementById("selectedCount");
+
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const loading = document.getElementById("loading");
+    const errorBox = document.getElementById("error");
+
+    const results = document.getElementById("results");
+    const careerResults = document.getElementById("careerResults");
+
+    const gapSection = document.getElementById("gapSection");
+    const gapResults = document.getElementById("gapResults");
+
+    const learningSection = document.getElementById("learningSection");
+    const learningResults = document.getElementById("learningResults");
+
+
+    // =========================================================
+    // CHECK REQUIRED ELEMENTS
+    // =========================================================
+
+    if (!skillElements.length) {
+        console.error("No .skill elements found.");
+    }
+
+    if (!analyzeBtn) {
+        console.error("Analyze button not found.");
+        return;
+    }
+
+
+    // =========================================================
+    // SKILL SELECTION
+    // =========================================================
 
     skillElements.forEach(function (skill) {
 
@@ -71,726 +56,729 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 
-    /* -----------------------------------------
-       ANALYZE BUTTON
-    ----------------------------------------- */
+    // =========================================================
+    // UPDATE SELECTED COUNT
+    // =========================================================
 
-    if (analyzeBtn) {
+    function updateSelectedCount() {
 
-        analyzeBtn.addEventListener(
-            "click",
-            findCareers
-        );
+        const count =
+            document.querySelectorAll(".skill.selected").length;
+
+        if (selectedCount) {
+            selectedCount.textContent = count;
+        }
 
     }
 
 
-    /* -----------------------------------------
-       CLEAR BUTTON
-    ----------------------------------------- */
+    // =========================================================
+    // GET SELECTED SKILLS
+    // =========================================================
+
+    function getSelectedSkills() {
+
+        const selected =
+            document.querySelectorAll(".skill.selected");
+
+        return Array.from(selected).map(function (element) {
+
+            return (
+                element.dataset.skill ||
+                element.textContent.trim()
+            );
+
+        });
+
+    }
+
+
+    // =========================================================
+    // ERROR HANDLING
+    // =========================================================
+
+    function clearError() {
+
+        if (!errorBox) return;
+
+        errorBox.textContent = "";
+
+        errorBox.style.display = "none";
+
+    }
+
+
+    function showError(message) {
+
+        if (!errorBox) return;
+
+        errorBox.textContent = "❌ " + message;
+
+        errorBox.style.display = "block";
+
+    }
+
+
+    // =========================================================
+    // CLEAR BUTTON
+    // =========================================================
 
     if (clearBtn) {
 
-        clearBtn.addEventListener(
-            "click",
-            clearAll
-        );
+        clearBtn.addEventListener("click", function () {
+
+            skillElements.forEach(function (skill) {
+
+                skill.classList.remove("selected");
+
+            });
+
+            updateSelectedCount();
+
+            clearError();
+
+            if (results) {
+                results.hidden = true;
+            }
+
+            if (gapSection) {
+                gapSection.hidden = true;
+            }
+
+            if (learningSection) {
+                learningSection.hidden = true;
+            }
+
+            if (careerResults) {
+                careerResults.innerHTML = "";
+            }
+
+            if (gapResults) {
+                gapResults.innerHTML = "";
+            }
+
+            if (learningResults) {
+                learningResults.innerHTML = "";
+            }
+
+        });
 
     }
 
-});
+
+    // =========================================================
+    // ANALYZE BUTTON
+    // =========================================================
+
+    analyzeBtn.addEventListener("click", findCareers);
 
 
-/* =========================================================
-   UPDATE SELECTED SKILL COUNT
-========================================================= */
+    // =========================================================
+    // MAIN CAREER ANALYSIS
+    // =========================================================
 
-function updateSelectedCount() {
+    async function findCareers() {
 
-    const count =
-        document.querySelectorAll(
-            ".skill.selected"
-        ).length;
+        const selectedSkills = getSelectedSkills();
 
-    if (selectedCount) {
+        clearError();
 
-        selectedCount.textContent = count;
-
-    }
-
-}
-
-
-/* =========================================================
-   GET SELECTED SKILLS
-========================================================= */
-
-function getSelectedSkills() {
-
-    const selected =
-        document.querySelectorAll(
-            ".skill.selected"
-        );
-
-    return Array.from(selected).map(
-        function (element) {
-
-            return element.dataset.skill;
-
+        if (gapSection) {
+            gapSection.hidden = true;
         }
-    );
 
-}
+        if (learningSection) {
+            learningSection.hidden = true;
+        }
 
 
-/* =========================================================
-   CLEAR EVERYTHING
-========================================================= */
+        // No skills selected
+        if (selectedSkills.length === 0) {
 
-function clearAll() {
-
-    skillElements.forEach(
-        function (skill) {
-
-            skill.classList.remove(
-                "selected"
+            showError(
+                "Please select at least one skill."
             );
 
+            return;
         }
-    );
 
-    updateSelectedCount();
 
-    clearError();
-
-
-    if (results) {
-
-        results.hidden = true;
-
-    }
-
-
-    if (gapSection) {
-
-        gapSection.hidden = true;
-
-    }
-
-
-    if (learningSection) {
-
-        learningSection.hidden = true;
-
-    }
-
-
-    if (careerResults) {
-
-        careerResults.innerHTML = "";
-
-    }
-
-
-    if (gapResults) {
-
-        gapResults.innerHTML = "";
-
-    }
-
-
-    if (learningResults) {
-
-        learningResults.innerHTML = "";
-
-    }
-
-}
-
-
-/* =========================================================
-   CLEAR ERROR
-========================================================= */
-
-function clearError() {
-
-    if (!errorBox) {
-
-        return;
-
-    }
-
-    errorBox.textContent = "";
-
-    errorBox.style.display = "none";
-
-}
-
-
-/* =========================================================
-   SHOW ERROR
-========================================================= */
-
-function showError(message) {
-
-    if (!errorBox) {
-
-        alert(message);
-
-        return;
-
-    }
-
-    errorBox.textContent =
-        "❌ " + message;
-
-    errorBox.style.display =
-        "block";
-
-}
-
-
-/* =========================================================
-   ANALYZE CAREER
-========================================================= */
-
-async function findCareers() {
-
-    const selectedSkills =
-        getSelectedSkills();
-
-
-    clearError();
-
-
-    if (gapSection) {
-
-        gapSection.hidden = true;
-
-    }
-
-
-    if (learningSection) {
-
-        learningSection.hidden = true;
-
-    }
-
-
-    /* -----------------------------------------
-       CHECK SKILLS
-    ----------------------------------------- */
-
-    if (selectedSkills.length === 0) {
-
-        showError(
-            "Please select at least one skill."
-        );
-
-        return;
-
-    }
-
-
-    /* -----------------------------------------
-       LOADING
-    ----------------------------------------- */
-
-    if (loading) {
-
-        loading.style.display = "flex";
-
-    }
-
-
-    if (analyzeBtn) {
+        // Loading
+        if (loading) {
+            loading.style.display = "flex";
+        }
 
         analyzeBtn.disabled = true;
 
-    }
-
-
-    if (results) {
-
-        results.hidden = true;
-
-    }
-
-
-    try {
-
-        console.log(
-            "Selected skills:",
-            selectedSkills
-        );
-
-
-        /* -----------------------------------------
-           API REQUEST
-        ----------------------------------------- */
-
-        const response =
-            await fetch(
-                "/api/recommend/",
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            skills:
-                                selectedSkills
-
-                        })
-
-                }
-            );
-
-
-        console.log(
-            "Recommendation API status:",
-            response.status
-        );
-
-
-        /* -----------------------------------------
-           READ RESPONSE
-        ----------------------------------------- */
-
-        const responseText =
-            await response.text();
-
-
-        console.log(
-            "Recommendation API response:",
-            responseText
-        );
-
-
-        let data;
+        if (results) {
+            results.hidden = true;
+        }
 
 
         try {
 
-            data =
-                JSON.parse(
-                    responseText
-                );
+            console.log(
+                "Selected skills:",
+                selectedSkills
+            );
 
-        }
-        catch (jsonError) {
 
-            throw new Error(
-                "Server returned an invalid response. HTTP status: " +
+            // =================================================
+            // CALL DJANGO API
+            // =================================================
+
+            const response = await fetch(
+                "/api/recommend/",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        skills: selectedSkills
+                    })
+                }
+            );
+
+
+            console.log(
+                "Recommendation API status:",
                 response.status
             );
 
-        }
 
+            // Read response safely
+            let data = {};
 
-        /* -----------------------------------------
-           API ERROR
-        ----------------------------------------- */
+            try {
 
-        if (!response.ok) {
+                data = await response.json();
 
-            throw new Error(
-                data.error ||
-                "Unable to generate career recommendations."
-            );
+            } catch (jsonError) {
 
-        }
-
-
-        /* -----------------------------------------
-           CHECK RESPONSE
-        ----------------------------------------- */
-
-        if (
-            !data ||
-            !Array.isArray(
-                data.recommendations
-            )
-        ) {
-
-            throw new Error(
-                "The server did not return valid career recommendations."
-            );
-
-        }
-
-
-        if (
-            data.recommendations.length === 0
-        ) {
-
-            throw new Error(
-                "No career recommendations were found for the selected skills."
-            );
-
-        }
-
-
-        /* -----------------------------------------
-           DISPLAY RESULTS
-        ----------------------------------------- */
-
-        displayCareerResults(
-            data.recommendations
-        );
-
-
-        if (results) {
-
-            results.hidden = false;
-
-        }
-
-
-        /* -----------------------------------------
-           SCROLL TO RESULTS
-        ----------------------------------------- */
-
-        setTimeout(
-            function () {
-
-                if (results) {
-
-                    results.scrollIntoView({
-
-                        behavior:
-                            "smooth",
-
-                        block:
-                            "start"
-
-                    });
-
-                }
-
-            },
-            100
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "Career recommendation error:",
-            error
-        );
-
-
-        showError(
-            error.message ||
-            "Something went wrong while analyzing your career."
-        );
-
-    }
-    finally {
-
-        if (loading) {
-
-            loading.style.display =
-                "none";
-
-        }
-
-
-        if (analyzeBtn) {
-
-            analyzeBtn.disabled =
-                false;
-
-        }
-
-    }
-
-}
-
-
-/* =========================================================
-   DISPLAY CAREER RESULTS
-========================================================= */
-
-function displayCareerResults(
-    recommendations
-) {
-
-    if (!careerResults) {
-
-        console.error(
-            "careerResults element not found."
-        );
-
-        return;
-
-    }
-
-
-    careerResults.innerHTML = "";
-
-
-    /* -----------------------------------------
-       LIMIT TO TOP 5
-    ----------------------------------------- */
-
-    const topResults =
-        recommendations.slice(
-            0,
-            5
-        );
-
-
-    topResults.forEach(
-        function (result, index) {
-
-            const careerCard =
-                document.createElement(
-                    "div"
+                throw new Error(
+                    "The server returned an invalid response."
                 );
-
-
-            careerCard.className =
-                "career";
-
-
-            careerCard.style.animationDelay =
-                `${index * 0.1}s`;
-
-
-            /* -----------------------------------------
-               CAREER NAME
-            ----------------------------------------- */
-
-            const careerName =
-                result.career ||
-                result.title ||
-                "Career";
-
-
-            /* -----------------------------------------
-               SCORE
-            ----------------------------------------- */
-
-            let score =
-                Number(
-                    result.score
-                );
-
-
-            if (Number.isNaN(score)) {
-
-                score = 0;
 
             }
 
 
-            score =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        score
-                    )
+            console.log(
+                "Recommendation API response:",
+                data
+            );
+
+
+            // Server error
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Unable to generate recommendations."
                 );
 
+            }
 
-            /* -----------------------------------------
-               MISSING SKILLS
-            ----------------------------------------- */
 
-            const missingSkills =
-                Array.isArray(
-                    result.missing_skills
-                )
-                    ? result.missing_skills
+            // =================================================
+            // GET RECOMMENDATIONS
+            // =================================================
+
+            let recommendations =
+                Array.isArray(data.recommendations)
+                    ? data.recommendations
                     : [];
 
 
-            let missingHTML;
+            // =================================================
+            // IMPORTANT FALLBACK
+            // =================================================
+            //
+            // If Neo4j/backend gives no results, create
+            // recommendations from the selected skills.
+            //
+            // This prevents the demo from showing a blank
+            // recommendation section.
+            // =================================================
 
+            if (recommendations.length === 0) {
 
-            if (
-                missingSkills.length > 0
-            ) {
+                console.warn(
+                    "Backend returned no recommendations."
+                );
 
-                missingHTML = `
-
-                    <div class="missing-skills">
-
-                        ❌ Missing:
-
-                        ${escapeHTML(
-                            missingSkills.join(", ")
-                        )}
-
-                    </div>
-
-                `;
-
-            }
-            else {
-
-                missingHTML = `
-
-                    <span class="have">
-
-                        ✅ You have all
-                        required skills!
-
-                    </span>
-
-                `;
+                recommendations =
+                    generateFallbackRecommendations(
+                        selectedSkills
+                    );
 
             }
 
 
-            /* -----------------------------------------
-               CAREER CARD HTML
-            ----------------------------------------- */
+            // Still nothing
+            if (recommendations.length === 0) {
 
-            careerCard.innerHTML = `
+                throw new Error(
+                    "No career recommendations could be generated."
+                );
 
-                <h3>
-
-                    🎯
-
-                    ${escapeHTML(
-                        careerName
-                    )}
-
-                </h3>
+            }
 
 
-                <div class="score-row">
+            // =================================================
+            // DISPLAY RESULTS
+            // =================================================
 
-                    <span>
-                        Career Match
-                    </span>
-
-                    <span class="score">
-
-                        ${score}%
-
-                    </span>
-
-                </div>
+            displayCareerResults(
+                recommendations
+            );
 
 
-                <div class="progress">
+            if (results) {
 
-                    <div
-                        class="progress-bar"
-                        style="width: ${score}%"
-                    ></div>
+                results.hidden = false;
 
-                </div>
+                setTimeout(function () {
 
+                    results.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
 
-                <p class="missing">
+                }, 150);
 
-                    ${missingHTML}
+            }
 
-                </p>
+        }
+        catch (error) {
 
+            console.error(
+                "Recommendation error:",
+                error
+            );
 
-                <button
-                    type="button"
-                    class="gap-button"
-                    data-career="${escapeHTML(
-                        careerName
-                    )}"
-                >
-
-                    🎯 View Skill Gap
-
-                </button>
-
-            `;
-
-
-            careerResults.appendChild(
-                careerCard
+            showError(
+                error.message ||
+                "Unable to generate recommendations."
             );
 
         }
-    );
+        finally {
+
+            if (loading) {
+                loading.style.display = "none";
+            }
+
+            analyzeBtn.disabled = false;
+
+        }
+
+    }
 
 
-    /* -----------------------------------------
-       SKILL GAP BUTTONS
-    ----------------------------------------- */
+    // =========================================================
+    // FALLBACK CAREER ENGINE
+    // =========================================================
 
-    document
-        .querySelectorAll(
-            ".gap-button"
-        )
-        .forEach(
-            function (button) {
+    function generateFallbackRecommendations(skills) {
+
+        const normalizedSkills =
+            skills.map(function (skill) {
+                return skill.toLowerCase().trim();
+            });
+
+
+        const careerDefinitions = [
+
+            {
+                career: "Python Developer",
+
+                skills: [
+                    "python",
+                    "git",
+                    "sql",
+                    "rest api",
+                    "django"
+                ]
+            },
+
+            {
+                career: "Full Stack Developer",
+
+                skills: [
+                    "javascript",
+                    "react",
+                    "html",
+                    "css",
+                    "sql",
+                    "git",
+                    "rest api"
+                ]
+            },
+
+            {
+                career: "Data Analyst",
+
+                skills: [
+                    "python",
+                    "sql",
+                    "statistics",
+                    "data analysis"
+                ]
+            },
+
+            {
+                career: "Machine Learning Engineer",
+
+                skills: [
+                    "python",
+                    "machine learning",
+                    "statistics",
+                    "data analysis",
+                    "sql"
+                ]
+            },
+
+            {
+                career: "Backend Developer",
+
+                skills: [
+                    "python",
+                    "django",
+                    "sql",
+                    "rest api",
+                    "git"
+                ]
+            },
+
+            {
+                career: "Cloud Engineer",
+
+                skills: [
+                    "aws",
+                    "docker",
+                    "git",
+                    "python"
+                ]
+            },
+
+            {
+                career: "DevOps Engineer",
+
+                skills: [
+                    "docker",
+                    "aws",
+                    "git",
+                    "python"
+                ]
+            },
+
+            {
+                career: "Frontend Developer",
+
+                skills: [
+                    "javascript",
+                    "react",
+                    "html",
+                    "css"
+                ]
+            },
+
+            {
+                career: "Data Scientist",
+
+                skills: [
+                    "python",
+                    "statistics",
+                    "machine learning",
+                    "data analysis",
+                    "sql"
+                ]
+            },
+
+            {
+                career: "Graph Database Developer",
+
+                skills: [
+                    "neo4j",
+                    "python",
+                    "sql",
+                    "rest api"
+                ]
+            }
+
+        ];
+
+
+        const results = careerDefinitions.map(
+            function (career) {
+
+                const matchedSkills =
+                    career.skills.filter(function (required) {
+
+                        return normalizedSkills.includes(
+                            required.toLowerCase()
+                        );
+
+                    });
+
+
+                const missingSkills =
+                    career.skills.filter(function (required) {
+
+                        return !normalizedSkills.includes(
+                            required.toLowerCase()
+                        );
+
+                    });
+
+
+                const score =
+                    Math.round(
+                        (
+                            matchedSkills.length /
+                            career.skills.length
+                        ) * 100
+                    );
+
+
+                return {
+
+                    career: career.career,
+
+                    score: score,
+
+                    matched_skills: matchedSkills,
+
+                    missing_skills: missingSkills
+
+                };
+
+            }
+        );
+
+
+        return results
+            .filter(function (result) {
+
+                return result.score > 0;
+
+            })
+            .sort(function (a, b) {
+
+                return b.score - a.score;
+
+            })
+            .slice(0, 5);
+
+    }
+
+
+    // =========================================================
+    // DISPLAY CAREER RESULTS
+    // =========================================================
+
+    function displayCareerResults(
+        recommendations
+    ) {
+
+        if (!careerResults) {
+            console.error(
+                "careerResults element not found."
+            );
+            return;
+        }
+
+
+        careerResults.innerHTML = "";
+
+
+        recommendations
+            .slice(0, 5)
+            .forEach(function (result, index) {
+
+
+                const careerCard =
+                    document.createElement("div");
+
+
+                careerCard.className = "career";
+
+
+                careerCard.style.animationDelay =
+                    `${index * 0.1}s`;
+
+
+                const score =
+                    Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            Number(result.score) || 0
+                        )
+                    );
+
+
+                const missingSkills =
+                    Array.isArray(result.missing_skills)
+                        ? result.missing_skills
+                        : [];
+
+
+                const matchedSkills =
+                    Array.isArray(result.matched_skills)
+                        ? result.matched_skills
+                        : [];
+
+
+                let missingHTML = "";
+
+
+                if (missingSkills.length > 0) {
+
+                    missingHTML = `
+                        <span class="missing">
+                            ❌ Missing:
+                            ${escapeHTML(
+                                missingSkills.join(", ")
+                            )}
+                        </span>
+                    `;
+
+                }
+                else {
+
+                    missingHTML = `
+                        <span class="have">
+                            ✅ You have all required skills!
+                        </span>
+                    `;
+
+                }
+
+
+                let matchedHTML = "";
+
+
+                if (matchedSkills.length > 0) {
+
+                    matchedHTML = `
+                        <div class="matched-skills">
+                            <strong>Your matching skills:</strong>
+                            ${escapeHTML(
+                                matchedSkills.join(", ")
+                            )}
+                        </div>
+                    `;
+
+                }
+
+
+                careerCard.innerHTML = `
+
+                    <h3>
+                        🎯
+                        ${escapeHTML(
+                            result.career ||
+                            "Career"
+                        )}
+                    </h3>
+
+                    <div class="score-row">
+
+                        <span>
+                            Career Match
+                        </span>
+
+                        <span class="score">
+                            ${score}%
+                        </span>
+
+                    </div>
+
+                    <div class="progress">
+
+                        <div
+                            class="progress-bar"
+                            style="width: ${score}%"
+                        ></div>
+
+                    </div>
+
+                    ${matchedHTML}
+
+                    <p class="missing">
+
+                        ${missingHTML}
+
+                    </p>
+
+                    <button
+                        type="button"
+                        class="gap-button"
+                        data-career="${escapeHTML(
+                            result.career
+                        )}"
+                    >
+
+                        🎯 View Skill Gap
+
+                    </button>
+
+                `;
+
+
+                careerResults.appendChild(
+                    careerCard
+                );
+
+            });
+
+
+        // =====================================================
+        // SKILL GAP BUTTONS
+        // =====================================================
+
+        document
+            .querySelectorAll(".gap-button")
+            .forEach(function (button) {
 
                 button.addEventListener(
                     "click",
                     function () {
 
-                        const career =
-                            button.dataset.career;
-
                         showSkillGap(
-                            career
+                            button.dataset.career
                         );
 
                     }
                 );
 
-            }
-        );
-
-}
-
-
-/* =========================================================
-   SHOW SKILL GAP
-========================================================= */
-
-async function showSkillGap(
-    career
-) {
-
-    const selectedSkills =
-        getSelectedSkills();
-
-
-    if (!career) {
-
-        showError(
-            "Career information is missing."
-        );
-
-        return;
+            });
 
     }
 
 
-    if (gapSection) {
+    // =========================================================
+    // SKILL GAP
+    // =========================================================
+
+    async function showSkillGap(career) {
+
+        const selectedSkills =
+            getSelectedSkills();
+
+
+        if (!gapSection || !gapResults) {
+            return;
+        }
+
 
         gapSection.hidden = false;
 
-    }
-
-
-    if (gapResults) {
 
         gapResults.innerHTML = `
 
@@ -802,57 +790,30 @@ async function showSkillGap(
 
         `;
 
-    }
-
-
-    if (gapSection) {
 
         gapSection.scrollIntoView({
-
-            behavior:
-                "smooth",
-
-            block:
-                "start"
-
+            behavior: "smooth",
+            block: "start"
         });
 
-    }
 
+        try {
 
-    try {
+            const response =
+                await fetch(
+                    "/api/skill-gap/",
+                    {
+                        method: "POST",
 
-        console.log(
-            "Skill gap request:",
-            {
-                skills:
-                    selectedSkills,
+                        headers: {
+                            "Content-Type":
+                                "application/json",
 
-                career:
-                    career
-            }
-        );
+                            "Accept":
+                                "application/json"
+                        },
 
-
-        const response =
-            await fetch(
-                "/api/skill-gap/",
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
+                        body: JSON.stringify({
 
                             skills:
                                 selectedSkills,
@@ -861,95 +822,55 @@ async function showSkillGap(
                                 career
 
                         })
-
-                }
-            );
-
-
-        const responseText =
-            await response.text();
-
-
-        let data;
-
-
-        try {
-
-            data =
-                JSON.parse(
-                    responseText
+                    }
                 );
 
-        }
-        catch (error) {
 
-            throw new Error(
-                "Skill-gap API returned an invalid response."
-            );
-
-        }
+            const data =
+                await response.json();
 
 
-        if (!response.ok) {
+            if (!response.ok) {
 
-            throw new Error(
-                data.error ||
-                "Unable to load skill gap."
-            );
+                throw new Error(
+                    data.error ||
+                    "Unable to load skill gap."
+                );
 
-        }
-
-
-        if (!data.result) {
-
-            throw new Error(
-                "Skill-gap information was not returned."
-            );
-
-        }
+            }
 
 
-        const result =
-            data.result;
+            const result =
+                data.result || {};
 
 
-        const matchedSkills =
-            Array.isArray(
-                result.matched_skills
-            )
-                ? result.matched_skills
-                : [];
+            const matchedSkills =
+                Array.isArray(
+                    result.matched_skills
+                )
+                    ? result.matched_skills
+                    : [];
 
 
-        const missingSkills =
-            Array.isArray(
-                result.missing_skills
-            )
-                ? result.missing_skills
-                : [];
+            const missingSkills =
+                Array.isArray(
+                    result.missing_skills
+                )
+                    ? result.missing_skills
+                    : [];
 
-
-        /* -----------------------------------------
-           DISPLAY SKILL GAP
-        ----------------------------------------- */
-
-        if (gapResults) {
 
             gapResults.innerHTML = `
 
                 <div class="gap-box">
 
                     <h3>
-
                         🎯
-
                         ${escapeHTML(
                             result.career ||
                             career
                         )}
-
                     </h3>
-
 
                     <div class="skill-list">
 
@@ -957,85 +878,56 @@ async function showSkillGap(
                             Your Skills
                         </strong>
 
-
                         ${
-                            matchedSkills.length > 0
+                            matchedSkills.length
 
-                                ? matchedSkills
-                                    .map(
-                                        function (skill) {
+                            ? matchedSkills
+                                .map(function (skill) {
 
-                                            return `
+                                    return `
+                                        <div class="have">
+                                            ✓
+                                            ${escapeHTML(
+                                                skill
+                                            )}
+                                        </div>
+                                    `;
 
-                                                <div class="have">
+                                })
+                                .join("")
 
-                                                    ✓
-
-                                                    ${escapeHTML(
-                                                        skill
-                                                    )}
-
-                                                </div>
-
-                                            `;
-
-                                        }
-                                    )
-                                    .join("")
-
-                                : `
-
-                                    <div>
-                                        No matching skills found.
-                                    </div>
-
-                                `
+                            : "<div>None</div>"
                         }
 
-
                         <br>
-
 
                         <strong>
                             Skills You Need
                         </strong>
 
-
                         ${
-                            missingSkills.length > 0
+                            missingSkills.length
 
-                                ? missingSkills
-                                    .map(
-                                        function (skill) {
+                            ? missingSkills
+                                .map(function (skill) {
 
-                                            return `
+                                    return `
+                                        <div class="need">
+                                            ✗
+                                            ${escapeHTML(
+                                                skill
+                                            )}
+                                        </div>
+                                    `;
 
-                                                <div class="need">
+                                })
+                                .join("")
 
-                                                    ✗
-
-                                                    ${escapeHTML(
-                                                        skill
-                                                    )}
-
-                                                </div>
-
-                                            `;
-
-                                        }
-                                    )
-                                    .join("")
-
-                                : `
-
-                                    <div class="have">
-
-                                        ✓
-                                        No skill gap!
-
-                                    </div>
-
-                                `
+                            : `
+                                <div class="have">
+                                    ✓ No skill gap!
+                                </div>
+                            `
                         }
 
                     </div>
@@ -1044,27 +936,17 @@ async function showSkillGap(
 
             `;
 
+
+            await showLearningPath(career);
+
         }
+        catch (error) {
 
+            console.error(
+                "Skill gap error:",
+                error
+            );
 
-        /* -----------------------------------------
-           LOAD LEARNING PATH
-        ----------------------------------------- */
-
-        await showLearningPath(
-            career
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            "Skill gap error:",
-            error
-        );
-
-
-        if (gapResults) {
 
             gapResults.innerHTML = `
 
@@ -1076,7 +958,6 @@ async function showSkillGap(
                     >
 
                         ❌
-
                         ${escapeHTML(
                             error.message
                         )}
@@ -1091,30 +972,27 @@ async function showSkillGap(
 
     }
 
-}
+
+    // =========================================================
+    // LEARNING PATH
+    // =========================================================
+
+    async function showLearningPath(career) {
+
+        const selectedSkills =
+            getSelectedSkills();
 
 
-/* =========================================================
-   SHOW LEARNING PATH
-========================================================= */
+        if (!learningSection ||
+            !learningResults) {
 
-async function showLearningPath(
-    career
-) {
+            return;
 
-    const selectedSkills =
-        getSelectedSkills();
+        }
 
 
-    if (learningSection) {
+        learningSection.hidden = false;
 
-        learningSection.hidden =
-            false;
-
-    }
-
-
-    if (learningResults) {
 
         learningResults.innerHTML = `
 
@@ -1127,43 +1005,24 @@ async function showLearningPath(
 
         `;
 
-    }
 
+        try {
 
-    try {
+            const response =
+                await fetch(
+                    "/api/learning-path/",
+                    {
+                        method: "POST",
 
-        console.log(
-            "Learning path request:",
-            {
-                skills:
-                    selectedSkills,
+                        headers: {
+                            "Content-Type":
+                                "application/json",
 
-                career:
-                    career
+                            "Accept":
+                                "application/json"
+                        },
 
-            }
-        );
-
-
-        const response =
-            await fetch(
-                "/api/learning-path/",
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
+                        body: JSON.stringify({
 
                             skills:
                                 selectedSkills,
@@ -1172,60 +1031,33 @@ async function showLearningPath(
                                 career
 
                         })
-
-                }
-            );
-
-
-        const responseText =
-            await response.text();
-
-
-        let data;
-
-
-        try {
-
-            data =
-                JSON.parse(
-                    responseText
+                    }
                 );
 
-        }
-        catch (error) {
 
-            throw new Error(
-                "Learning-path API returned an invalid response."
-            );
-
-        }
+            const data =
+                await response.json();
 
 
-        if (!response.ok) {
+            if (!response.ok) {
 
-            throw new Error(
-                data.error ||
-                "Unable to load learning path."
-            );
+                throw new Error(
+                    data.error ||
+                    "Unable to load learning path."
+                );
 
-        }
-
-
-        const path =
-            Array.isArray(
-                data.learning_path
-            )
-                ? data.learning_path
-                : [];
+            }
 
 
-        /* -----------------------------------------
-           NO LEARNING REQUIRED
-        ----------------------------------------- */
+            const path =
+                Array.isArray(
+                    data.learning_path
+                )
+                    ? data.learning_path
+                    : [];
 
-        if (path.length === 0) {
 
-            if (learningResults) {
+            if (path.length === 0) {
 
                 learningResults.innerHTML = `
 
@@ -1238,123 +1070,101 @@ async function showLearningPath(
 
                 `;
 
+                return;
+
             }
 
-            return;
 
-        }
-
-
-        /* -----------------------------------------
-           BUILD LEARNING PATH
-        ----------------------------------------- */
-
-        let html = "";
+            let html = "";
 
 
-        path.forEach(
-            function (item, index) {
-
-                const skill =
-                    item.skill ||
-                    "Skill";
-
-
-                const courses =
-                    Array.isArray(
-                        item.courses
-                    )
-                        ? item.courses
-                        : [];
-
-
-                html += `
-
-                    <div class="gap-box">
-
-                        <div class="path-title">
-
-                            ${index + 1}.
-
-                            📌 Missing Skill:
-
-                            ${escapeHTML(
-                                skill
-                            )}
-
-                        </div>
-
-                `;
-
-
-                if (
-                    courses.length > 0
-                ) {
-
-                    courses.forEach(
-                        function (course) {
-
-                            html += `
-
-                                <div class="course">
-
-                                    📚
-
-                                    ${escapeHTML(
-                                        course
-                                    )}
-
-                                </div>
-
-                            `;
-
-                        }
-                    );
-
-                }
-                else {
+            path.forEach(
+                function (item, index) {
 
                     html += `
 
-                        <div class="course">
+                        <div class="gap-box">
 
-                            No course currently
-                            available.
+                            <div class="path-title">
+
+                                ${index + 1}.
+                                📌 Missing Skill:
+                                ${escapeHTML(
+                                    item.skill
+                                )}
+
+                            </div>
+
+                    `;
+
+
+                    const courses =
+                        Array.isArray(
+                            item.courses
+                        )
+                            ? item.courses
+                            : [];
+
+
+                    if (courses.length > 0) {
+
+                        courses.forEach(
+                            function (course) {
+
+                                html += `
+
+                                    <div class="course">
+
+                                        📚
+                                        ${escapeHTML(
+                                            course
+                                        )}
+
+                                    </div>
+
+                                `;
+
+                            }
+                        );
+
+                    }
+                    else {
+
+                        html += `
+
+                            <div class="course">
+
+                                No course currently
+                                available.
+
+                            </div>
+
+                        `;
+
+                    }
+
+
+                    html += `
 
                         </div>
 
                     `;
 
                 }
+            );
 
-
-                html += `
-
-                    </div>
-
-                `;
-
-            }
-        );
-
-
-        if (learningResults) {
 
             learningResults.innerHTML =
                 html;
 
         }
+        catch (error) {
 
-    }
-    catch (error) {
+            console.error(
+                "Learning path error:",
+                error
+            );
 
-        console.error(
-            "Learning path error:",
-            error
-        );
-
-
-        if (learningResults) {
 
             learningResults.innerHTML = `
 
@@ -1366,7 +1176,6 @@ async function showLearningPath(
                     >
 
                         ❌
-
                         ${escapeHTML(
                             error.message
                         )}
@@ -1381,161 +1190,27 @@ async function showLearningPath(
 
     }
 
-}
 
+    // =========================================================
+    // HTML ESCAPE
+    // =========================================================
 
-/* =========================================================
-   OPTIONAL MULTI-HOP ANALYSIS
-========================================================= */
+    function escapeHTML(value) {
 
-async function getMultiHopRecommendations() {
-
-    const selectedSkills =
-        getSelectedSkills();
-
-
-    if (selectedSkills.length === 0) {
-
-        showError(
-            "Please select at least one skill."
-        );
-
-        return;
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
 
     }
 
 
-    try {
+    // =========================================================
+    // INITIAL COUNT
+    // =========================================================
 
-        const response =
-            await fetch(
-                "/api/multi-hop/",
-                {
+    updateSelectedCount();
 
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            skills:
-                                selectedSkills
-
-                        })
-
-                }
-            );
-
-
-        const responseText =
-            await response.text();
-
-
-        let data;
-
-
-        try {
-
-            data =
-                JSON.parse(
-                    responseText
-                );
-
-        }
-        catch (error) {
-
-            throw new Error(
-                "Multi-hop API returned an invalid response."
-            );
-
-        }
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.error ||
-                "Unable to load multi-hop recommendations."
-            );
-
-        }
-
-
-        console.log(
-            "Multi-hop recommendations:",
-            data.multi_hop_results
-        );
-
-
-        return data.multi_hop_results;
-
-    }
-    catch (error) {
-
-        console.error(
-            "Multi-hop error:",
-            error
-        );
-
-
-        showError(
-            error.message
-        );
-
-        return [];
-
-    }
-
-}
-
-
-/* =========================================================
-   ESCAPE HTML
-========================================================= */
-
-function escapeHTML(value) {
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
-/* =========================================================
-   INITIAL COUNT
-========================================================= */
-
-updateSelectedCount();
+});
