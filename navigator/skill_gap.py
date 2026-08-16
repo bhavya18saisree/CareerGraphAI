@@ -1,4 +1,4 @@
-from .graph import graph_db
+from .recommendation import get_career_recommendations
 
 
 def get_skill_gap(user_skills, target_career):
@@ -10,37 +10,29 @@ def get_skill_gap(user_skills, target_career):
         if str(skill).strip()
     ]
 
-    # Case-insensitive lookup
-    user_skill_lookup = {
-        skill.lower(): skill
-        for skill in user_skills
-    }
+    # Clean target career
+    target_career = str(target_career or "").strip()
 
-    query = """
-    MATCH (c:Career)-[:REQUIRES]->(s:Skill)
-    WHERE toLower(trim(c.name)) = toLower(trim($career))
-
-    WITH
-        c,
-        collect(DISTINCT s.name) AS required_skills
-
-    RETURN
-        c.name AS career,
-        required_skills
-    """
+    if not target_career:
+        return {
+            "career": "",
+            "required_skills": [],
+            "matched_skills": [],
+            "missing_skills": []
+        }
 
     try:
 
-        results = graph_db.execute_query(
-            query,
-            {
-                "career": target_career
-            }
+        # IMPORTANT:
+        # Use the SAME recommendation engine that already
+        # works correctly in Step 02.
+        recommendations = get_career_recommendations(
+            user_skills
         )
 
     except Exception as e:
 
-        print("Skill gap error:", e)
+        print("Skill gap recommendation error:", e)
 
         return {
             "career": target_career,
@@ -49,7 +41,22 @@ def get_skill_gap(user_skills, target_career):
             "missing_skills": []
         }
 
-    if not results:
+    # Find the selected career
+    selected_result = None
+
+    for result in recommendations:
+
+        career_name = str(
+            result.get("career", "")
+        ).strip()
+
+        if career_name.lower() == target_career.lower():
+
+            selected_result = result
+            break
+
+    # Career not found
+    if selected_result is None:
 
         return {
             "career": target_career,
@@ -58,33 +65,37 @@ def get_skill_gap(user_skills, target_career):
             "missing_skills": []
         }
 
-    result = results[0]
+    matched_skills = selected_result.get(
+        "matched_skills",
+        []
+    )
 
-    career_name = result["career"]
+    missing_skills = selected_result.get(
+        "missing_skills",
+        []
+    )
 
-    required_skills = result["required_skills"] or []
+    # Make sure they are always lists
+    if not isinstance(matched_skills, list):
+        matched_skills = []
 
-    matched_skills = []
-    missing_skills = []
+    if not isinstance(missing_skills, list):
+        missing_skills = []
 
-    for skill in required_skills:
-
-        if skill is None:
-            continue
-
-        skill_name = str(skill).strip()
-
-        if skill_name.lower() in user_skill_lookup:
-
-            matched_skills.append(skill_name)
-
-        else:
-
-            missing_skills.append(skill_name)
+    required_skills = (
+        matched_skills +
+        missing_skills
+    )
 
     return {
-        "career": career_name,
+        "career": selected_result.get(
+            "career",
+            target_career
+        ),
+
         "required_skills": required_skills,
+
         "matched_skills": matched_skills,
+
         "missing_skills": missing_skills
     }
