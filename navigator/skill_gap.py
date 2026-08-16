@@ -2,55 +2,22 @@ from .graph import graph_db
 
 
 def get_skill_gap(user_skills, target_career):
-    """
-    Calculate the skill gap between the user's skills
-    and the skills required for the selected career.
 
-    Matching is case-insensitive and ignores extra spaces.
-    """
+    # Clean user skills
+    user_skills = [
+        str(skill).strip()
+        for skill in (user_skills or [])
+        if str(skill).strip()
+    ]
 
-    # -----------------------------------------
-    # CLEAN USER SKILLS
-    # -----------------------------------------
-
-    if not user_skills:
-        user_skills = []
-
-    cleaned_user_skills = []
-
-    for skill in user_skills:
-        if skill is None:
-            continue
-
-        skill = str(skill).strip()
-
-        if skill:
-            cleaned_user_skills.append(skill)
-
-    # Remove duplicates
-    cleaned_user_skills = list(
-        dict.fromkeys(cleaned_user_skills)
-    )
-
-    # -----------------------------------------
-    # VALIDATE CAREER
-    # -----------------------------------------
-
-    if not target_career:
-        return {
-            "career": "",
-            "required_skills": [],
-            "matched_skills": [],
-            "missing_skills": []
-        }
-
-    # -----------------------------------------
-    # GET CAREER SKILLS FROM NEO4J
-    # -----------------------------------------
+    # Case-insensitive lookup
+    user_skill_lookup = {
+        skill.lower(): skill
+        for skill in user_skills
+    }
 
     query = """
     MATCH (c:Career)-[:REQUIRES]->(s:Skill)
-
     WHERE toLower(trim(c.name)) = toLower(trim($career))
 
     WITH
@@ -73,7 +40,7 @@ def get_skill_gap(user_skills, target_career):
 
     except Exception as e:
 
-        print("Skill gap Neo4j error:", str(e))
+        print("Skill gap error:", e)
 
         return {
             "career": target_career,
@@ -81,10 +48,6 @@ def get_skill_gap(user_skills, target_career):
             "matched_skills": [],
             "missing_skills": []
         }
-
-    # -----------------------------------------
-    # CAREER NOT FOUND
-    # -----------------------------------------
 
     if not results:
 
@@ -97,59 +60,27 @@ def get_skill_gap(user_skills, target_career):
 
     result = results[0]
 
-    career_name = result.get(
-        "career",
-        target_career
-    )
+    career_name = result["career"]
 
-    required_skills = result.get(
-        "required_skills",
-        []
-    )
-
-    # -----------------------------------------
-    # CASE-INSENSITIVE SKILL MATCHING
-    # -----------------------------------------
-
-    user_skill_lookup = {
-        str(skill).strip().lower(): skill
-        for skill in cleaned_user_skills
-    }
+    required_skills = result["required_skills"] or []
 
     matched_skills = []
     missing_skills = []
 
-    for required_skill in required_skills:
+    for skill in required_skills:
 
-        if required_skill is None:
+        if skill is None:
             continue
 
-        required_clean = (
-            str(required_skill)
-            .strip()
-        )
+        skill_name = str(skill).strip()
 
-        required_key = (
-            required_clean.lower()
-        )
+        if skill_name.lower() in user_skill_lookup:
 
-        if required_key in user_skill_lookup:
-
-            # Use the skill name from Neo4j
-            # so the display is consistent.
-            matched_skills.append(
-                required_clean
-            )
+            matched_skills.append(skill_name)
 
         else:
 
-            missing_skills.append(
-                required_clean
-            )
-
-    # -----------------------------------------
-    # RETURN RESULT
-    # -----------------------------------------
+            missing_skills.append(skill_name)
 
     return {
         "career": career_name,
