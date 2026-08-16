@@ -1,178 +1,87 @@
-**# 🚀 Career Graph AI**
-
-
-
-**Career Graph AI is an intelligent career and skill navigation system that uses a graph database to recommend suitable career paths, identify skill gaps, and generate personalized learning paths.**
-
-
-
-**## 🎯 Features**
-
-
-
-**- Career recommendations based on user skills**
-
-**- Skill gap analysis**
-
-**- Personalized learning path**
-
-**- Multi-hop graph-based recommendations**
-
-**- Graph database powered career intelligence**
-
-**- Loading, empty-state and error handling**
-
-**- Relational + graph database architecture**
-
-
-
-**## 🏗️ Technology Stack**
-
-
-
-**- Django**
-
-**- Python**
-
-**- JavaScript**
-
-**- HTML**
-
-**- CSS**
-
-**- SQLite**
-
-**- CognoDB / Neo4j-compatible Graph Database**
-
-
-
-**## 🧠 Graph Model**
-
-
-
-**The core career knowledge graph is structured using nodes and relationships:**
-
-
-
-**```text**
-
-&#x20;                        **┌──────────────┐**
-
-&#x20;                        **│    Career    │**
-
-&#x20;                        **└──────┬───────┘**
-
-&#x20;                               **│**
-
-&#x20;                            **REQUIRES**
-
-&#x20;                               **│**
-
-&#x20;                               **▼**
-
-&#x20;                        **┌──────────────┐**
-
-&#x20;                        **│    Skill     │**
-
-&#x20;                        **└──────┬───────┘**
-
-&#x20;                               **│**
-
-&#x20;                           **RELATED\_TO**
-
-&#x20;                               **│**
-
-&#x20;                               **▼**
-
-&#x20;                        **┌──────────────┐**
-
-&#x20;                        **│    Skill     │**
-
-&#x20;                        **└──────┬───────┘**
-
-&#x20;                               **│**
-
-&#x20;                            **REQUIRES**
-
-&#x20;                               **│**
-
-&#x20;                               **▼**
-
-&#x20;                        **┌──────────────┐**
-
-&#x20;                        **│    Career    │**
-
-&#x20;                        **└──────────────┘**
-
-
-
-
-
-&#x20;       **┌──────────────┐**
-
-&#x20;       **│    Course    │**
-
-&#x20;       **└──────┬───────┘**
-
-&#x20;              **│**
-
-&#x20;            **TEACHES**
-
-&#x20;              **│**
-
-&#x20;              **▼**
-
-&#x20;       **┌──────────────┐**
-
-&#x20;       **│    Skill     │**
-
-&#x20;       **└──────────────┘**
-
-
-
-
-
-&#x20;       **┌──────────────┐**
-
-&#x20;       **│   Project    │**
-
-&#x20;       **└──────┬───────┘**
-
-&#x20;              **│**
-
-&#x20;             **USES**
-
-&#x20;              **│**
-
-&#x20;              **▼**
-
-&#x20;       **┌──────────────┐**
-
-&#x20;       **│ Technology   │**
-
-&#x20;       **└──────────────┘**
-
-
-
-
-
-&#x20;       **┌──────────────┐**
-
-&#x20;       **│    Career    │**
-
-&#x20;       **└──────┬───────┘**
-
-&#x20;              **│**
-
-&#x20;         **IN\_INDUSTRY**
-
-&#x20;              **│**
-
-&#x20;              **▼**
-
-&#x20;       **┌──────────────┐**
-
-&#x20;       **│   Industry   │**
-
-&#x20;       **└──────────────┘**
+# 🚀 CareerGraph AI
+
+### Intelligent Career & Skill Navigator
+
+CareerGraph AI is a graph-powered career intelligence platform that helps users discover suitable career paths based on their existing skills, identify skill gaps, and generate personalized learning paths.
+
+The system uses a graph database to model relationships between careers, skills, courses, technologies, projects, and industries. This enables the platform to provide career recommendations beyond simple keyword matching.
+
+---
+
+## 🎯 Problem Statement
+
+Students and early-career professionals often struggle to understand:
+
+- Which career paths match their current skills?
+- Which skills are missing for a target career?
+- What should they learn next?
+- How are different skills, careers, courses, and technologies connected?
+
+CareerGraph AI addresses these challenges through a structured career knowledge graph and intelligent recommendation system.
+
+---
+
+## ✨ Key Features
+
+### 🎯 Career Recommendations
+Recommends suitable career paths based on the skills selected by the user.
+
+### 📊 Career Match Score
+Calculates a match percentage based on the user's existing skills and the skills required for each career.
+
+### 🔍 Skill Gap Analysis
+Identifies the skills the user is missing for a selected career.
+
+### 📚 Personalized Learning Path
+Provides learning recommendations based on the identified skill gaps.
+
+### 🔗 Multi-Hop Graph Recommendations
+Uses relationships in the career knowledge graph to discover connected career, skill, course, technology, and industry information.
+
+### 🧠 Graph-Powered Career Intelligence
+Uses a Neo4j-compatible graph database through CognoDB to represent relationships between career entities.
+
+### ⚡ Interactive Web Interface
+Provides an interactive interface where users can select skills, analyze careers, view skill gaps, and explore learning paths.
+
+### 🛡️ Error & Empty-State Handling
+Handles invalid requests, empty selections, loading states, and unavailable recommendation results.
+
+---
+
+# 🏗️ System Architecture
+
+```text
+                    ┌──────────────────────┐
+                    │      User            │
+                    │  Selects Skills      │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   JavaScript UI      │
+                    │   HTML + CSS         │
+                    └──────────┬───────────┘
+                               │
+                         REST API Calls
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │       Django         │
+                    │      Backend         │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+       Career Engine      Skill Gap       Learning Path
+              │                │                │
+              └────────────────┼────────────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   Graph Database     │
+                    │ CognoDB / Neo4j      │
+                    │    Compatible       │
+                    └──────────────────────┘
 
