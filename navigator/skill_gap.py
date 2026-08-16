@@ -1,4 +1,4 @@
-from .graph import graph_db
+from .recommendation import get_career_recommendations
 
 
 def get_skill_gap(user_skills, target_career):
@@ -13,7 +13,6 @@ def get_skill_gap(user_skills, target_career):
         if str(skill).strip()
     ]
 
-    # Remove duplicates
     user_skills = list(
         dict.fromkeys(user_skills)
     )
@@ -22,12 +21,7 @@ def get_skill_gap(user_skills, target_career):
         target_career or ""
     ).strip()
 
-    # =========================================================
-    # VALIDATION
-    # =========================================================
-
     if not target_career:
-
         return {
             "career": "",
             "required_skills": [],
@@ -36,35 +30,19 @@ def get_skill_gap(user_skills, target_career):
         }
 
     # =========================================================
-    # DIRECT NEO4J QUERY
-    #
-    # Do NOT call recommendation.py here.
-    # Directly get the skills required by the selected career.
+    # USE THE SAME ENGINE AS STEP 02
     # =========================================================
-
-    query = """
-    MATCH (c:Career)-[:REQUIRES]->(s:Skill)
-
-    WHERE toLower(trim(c.name)) = toLower(trim($career))
-
-    RETURN
-        c.name AS career,
-        collect(DISTINCT s.name) AS required_skills
-    """
 
     try:
 
-        results = graph_db.execute_query(
-            query,
-            {
-                "career": target_career
-            }
+        recommendations = get_career_recommendations(
+            user_skills
         )
 
     except Exception as e:
 
         print(
-            "Skill gap Neo4j error:",
+            "Skill gap error:",
             str(e)
         )
 
@@ -76,12 +54,12 @@ def get_skill_gap(user_skills, target_career):
         }
 
     # =========================================================
-    # FIND CAREER
+    # FIND SELECTED CAREER
     # =========================================================
 
     selected_result = None
 
-    for result in results:
+    for result in recommendations:
 
         career_name = str(
             result.get("career", "")
@@ -106,60 +84,41 @@ def get_skill_gap(user_skills, target_career):
         }
 
     # =========================================================
-    # REQUIRED SKILLS
+    # GET MATCHED + MISSING SKILLS
     # =========================================================
 
-    required_skills = selected_result.get(
-        "required_skills",
+    matched_skills = selected_result.get(
+        "matched_skills",
         []
     )
 
-    if not isinstance(required_skills, list):
+    missing_skills = selected_result.get(
+        "missing_skills",
+        []
+    )
 
-        required_skills = []
+    if not isinstance(matched_skills, list):
+        matched_skills = []
 
-    # Remove empty values
-    required_skills = [
-        str(skill).strip()
-        for skill in required_skills
-        if str(skill).strip()
-    ]
-
-    # =========================================================
-    # CASE-INSENSITIVE MATCHING
-    # =========================================================
-
-    normalized_user_skills = {
-        str(skill).strip().lower()
-        for skill in user_skills
-    }
-
-    matched_skills = []
-
-    missing_skills = []
-
-    for required_skill in required_skills:
-
-        normalized_required = (
-            str(required_skill)
-            .strip()
-            .lower()
-        )
-
-        if normalized_required in normalized_user_skills:
-
-            matched_skills.append(
-                required_skill
-            )
-
-        else:
-
-            missing_skills.append(
-                required_skill
-            )
+    if not isinstance(missing_skills, list):
+        missing_skills = []
 
     # =========================================================
-    # FINAL RESULT
+    # REQUIRED SKILLS
+    # =========================================================
+
+    required_skills = (
+        matched_skills +
+        missing_skills
+    )
+
+    # Remove duplicates
+    required_skills = list(
+        dict.fromkeys(required_skills)
+    )
+
+    # =========================================================
+    # RETURN
     # =========================================================
 
     return {
